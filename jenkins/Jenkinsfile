@@ -1,30 +1,51 @@
 pipeline {
-    agent {
-        docker {
-            image 'maven:3.9.0'
-            args '-v /root/.m2:/root/.m2'
-        }
-    }
+    agent any
     stages {
+        stage('Check Java Version') {
+            steps {
+                bat 'java --version'
+                bat 'javac --version'
+            }
+        }
+
+        stage('Check Maven Version') {
+            steps {
+                bat 'mvn --version'
+            }
+        }
+        stage('Pre-Build') {
+            steps {
+                script {
+                    bat 'for /r src/main/java/com/mycompany/app %%f in (*.java) do javac %%f'
+                }
+            }
+        }
         stage('Build') {
             steps {
-                sh 'mvn -B -DskipTests clean package'
+                bat 'mvn -B -DskipTests clean package'
             }
         }
         stage('Test') {
             steps {
-                sh 'mvn test'
+                bat 'mvn test'
             }
-            post {
-                always {
-                    junit 'target/surefire-reports/*.xml'
-                }
-            }
-        }
-        stage('Deliver') {
-            steps {
-                sh './jenkins/scripts/deliver.sh'
-            }
-        }
+	}
     }
+    post {
+	always {
+	    // junit 'target/surefire-reports/*.xml'
+		script{
+		   emailext (
+			   body: """
+				Hey, The build was successful !!!
+				Build ${currentBuild.currentResult}: Job '${env.JOB_NAME}' (${env.BUILD_NUMBER})
+				Build URL: ${env.BUILD_URL}
+						""",
+			   subject: "Build ${currentBuild.currentResult}: Job '${env.JOB_NAME}' (${env.BUILD_NUMBER})",
+			   to: 'arvindrana620445@gmail.com',
+			   attachLog: true
+			   )
+	}
+      }
+   }
 }
