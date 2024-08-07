@@ -30,6 +30,22 @@ pipeline {
                 bat 'mvn test'
             }
 	}
+	stage('Static-Code-Analysis') {
+	    steps {
+		def scannerHome = tool name: 'sonar', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+                    withSonarQubeEnv('sonarQube') {
+                        bat """
+                        &{scannerHome}\\sonarqubescanner\\bin\\sonar-scanner\
+                -Dsonar.projectKey=jenkins-pipeline01_devops-assessment01\
+                 -Dsonar.sources=src/
+                 -Dsonar.organization=jenkins-pipeline01\
+                 -Dsonar.login=491e7a00bfd5c6307583aa8af41558eb67ec27a1\
+                 """
+   
+                    }
+	    }
+	}
+	
     }
     post {
 	always {
