@@ -5,7 +5,6 @@ pipeline {
             steps {
                 bat 'java --version'
                 bat 'javac --version'
-		  bat 'echo javac --version'
             }
         }
 
