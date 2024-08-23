@@ -14,6 +14,58 @@ pipeline {
                 bat 'mvn --version'
             }
         }
-        
+
+	stage('Pre-Build') {
+            steps {
+                script {
+                    bat 'for /r src/main/java/com/mycompany/app %%f in (*.java) do javac %%f'
+                }
+            }
+        }
+        stage('Build') {
+            steps {
+                bat 'mvn -B -DskipTests clean package'
+            }
+        }
+        stage('Test') {
+            steps {
+                bat 'mvn test'
+            }
+	}
+	stage('Static-Code-Analysis') {
+	    steps {
+		script{
+			def scannerHome = tool name: 'sonar', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+	                    withSonarQubeEnv('sonarQube') {
+	                        bat """
+	                        C:\\ProgramData\\Jenkins\\.jenkins\\tools\\hudson.plugins.sonar.SonarRunnerInstallation\\sonar\\bin\\sonar-scanner\
+	                -Dsonar.projectKey=jenkins-pipeline01_devops-assessment01\
+	                 -Dsonar.sources=src//main//java\
+	                 -Dsonar.organization=jenkins-pipeline01\
+	                 -Dsonar.login=491e7a00bfd5c6307583aa8af41558eb67ec27a1\
+	                 """
+   
+                    }
+		}
+	    }
+	}
+	
+    }
+    post {
+	always {
+	    // junit 'target/surefire-reports/*.xml'
+		script{
+		   emailext (
+			   body: """
+				Hey, The build was successful !!!
+				Build ${currentBuild.currentResult}: Job '${env.JOB_NAME}' (${env.BUILD_NUMBER})
+				Build URL: ${env.BUILD_URL}
+						""",
+			   subject: "Build ${currentBuild.currentResult}: Job '${env.JOB_NAME}' (${env.BUILD_NUMBER})",
+			   to: 'arvindrana620445@gmail.com',
+			   attachLog: true
+			   )
+	}
+      }  
    }
 }
